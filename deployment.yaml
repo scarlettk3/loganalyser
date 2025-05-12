@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-error-agent
+  namespace: default
+  labels:
+    app: k8s-error-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-error-agent
+  template:
+    metadata:
+      labels:
+        app: k8s-error-agent
+    spec:
+      serviceAccountName: k8s-error-agent
+      containers:
+        - name: k8s-error-agent
+          image: scarlettk/k8s-error-agent:1.0   # Replace with your Docker Hub username
+          imagePullPolicy: Always
+          env:
+            - name: MISTRAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mistral-api-secret
+                  key: api-key
+            - name: CHECK_INTERVAL
+              value: "60"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: output-volume
+              mountPath: /app/output
+      volumes:
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: k8s-error-agent-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: k8s-error-agent-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mistral-api-secret
+  namespace: default
+type: Opaque
+stringData:
+  api-key: "Dq6I9eoh2jve7KB3NEGIlCEk3tlSZELL"
