@@ -1,0 +1,164 @@
+PS C:\Users\****>minikube start
+PS C:\Users\****> kubectl apply -f rbac.yaml
+PS C:\Users\****> docker build -t scarlettk/k8s-error-agent:1.0 .
+PS C:\Users\****> docker push scarlettk/k8s-error-agent:1.0
+PS C:\Users\****> kubectl apply -f deployment.yaml
+PS C:\Users\****> kubectl apply -f test-pod.yaml
+PS C:\Users\****> kubectl apply -f crashloop-pod.yaml
+PS C:\Users\****> kubectl apply -f evicted-pod.yaml
+PS C:\Users\****> kubectl apply -f oom-pod.yaml (wants to use memory then the limit)
+PS C:\Users\****> kubectl run failpod --image=busybox --restart=Never -- /bin/sh -c "exit 1" (generating a failed pod with a command without yaml file, it doesnt give any logs)
+PS C:\Users\****> kubectl get pods
+NAME                               READY   STATUS             RESTARTS       AGE
+crashloop-pod                      0/1     CrashLoopBackOff   15 (69s ago)   92m
+evicted-pod                        0/1     Pending            0              92m
+failpod                            0/1     Error              0              4h45m
+k8s-error-agent-766457bd78-p84w6   1/1     Running            0              14m
+oom-pod                            0/1     CrashLoopBackOff   20 (62s ago)   116m
+test-pod                           1/1     Running            0              131m
+PS C:\Users\****> kubectl logs k8s-error-agent-766457bd78-p84w6
+2025-05-12 15:22:10,646 - k8s-error-agent - INFO - Loaded in-cluster Kubernetes configuration
+2025-05-12 15:22:10,649 - k8s-error-agent - INFO - Starting Kubernetes Error Analysis Agent
+2025-05-12 15:22:10,934 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:22:11,174 - k8s-error-agent - INFO - Found failed pod: default/crashloop-pod
+2025-05-12 15:22:11,174 - k8s-error-agent - INFO - Found failed pod: default/failpod
+2025-05-12 15:22:11,174 - k8s-error-agent - INFO - Found failed pod: default/oom-pod
+2025-05-12 15:22:11,175 - k8s-error-agent - INFO - Found 3 failed pods in namespace default
+2025-05-12 15:22:11,180 - k8s-error-agent - INFO - Processing failed pod: default/crashloop-pod
+2025-05-12 15:22:16,181 - k8s-error-agent - INFO - Processing failed pod: default/failpod
+2025-05-12 15:22:16,476 - k8s-error-agent - INFO -
+================================================================================
+2025-05-12 15:22:16,477 - k8s-error-agent - INFO - ANALYSIS FOR POD: crashloop-pod IN NAMESPACE: default
+2025-05-12 15:22:16,477 - k8s-error-agent - INFO - ================================================================================
+2025-05-12 15:22:16,477 - k8s-error-agent - INFO - ### Concise Analysis:
+
+1. **Primary Error:**
+   - The primary error is that the container `busybox` in the pod `crashloop-pod` is in a `CrashLoopBackOff` state. This means the container is repeatedly crashing and being restarted by Kubernetes.
+
+2. **Potential Root Cause:**
+   - The container is crashing immediately after starting, as indicated by the repeated `Pulled`, `Created`, and `Started` events followed by `BackOff` events.
+   - The logs for the `busybox` container are empty, suggesting that the container might be exiting without producing any output.
+   - Possible causes include:
+     - The command specified in the container's configuration is incorrect or incomplete.
+     - There might be an issue with the `busybox` image itself.
+     - The container might be encountering an error that causes it to exit immediately.
+
+3. **Recommended Action:**
+   - **Check the Container Command:** Ensure that the command specified in the pod's configuration is correct and complete. For example, if you are using `busybox`, a common command might be `sleep infinity` to keep the container running.
+   - **Inspect the Image:** Verify that the `busybox` image is not corrupted and is the correct version.
+   - **Add Logging:** Modify the container's command to include logging or debugging information to capture more details about why it is crashing.
+   - **Review
+2025-05-12 15:22:16,477 - k8s-error-agent - INFO - ================================================================================
+
+2025-05-12 15:22:19,857 - k8s-error-agent - INFO -
+================================================================================
+2025-05-12 15:22:19,859 - k8s-error-agent - INFO - ANALYSIS FOR POD: failpod IN NAMESPACE: default
+2025-05-12 15:22:19,860 - k8s-error-agent - INFO - ================================================================================
+2025-05-12 15:22:19,860 - k8s-error-agent - INFO - ### Concise Analysis:
+
+1. **Primary Error:**
+   - The pod `failpod` in the `default` namespace has failed to start. The container `failpod` terminated with an exit code of `1` and the reason provided is "Error".
+
+2. **Potential Root Cause:**
+   - The container exited with a non-zero exit code (`1`), indicating that the application within the container encountered an error during startup. Common causes include:
+     - Misconfiguration in the container's startup command or arguments.
+     - Missing dependencies or environment variables.
+     - Issues with the application code itself.
+     - Resource constraints (e.g., insufficient memory or CPU).
+
+3. **Recommended Action:**
+   - **Check Container Logs:** Inspect the logs of the `failpod` container to get more detailed error messages that can provide insights into why the container exited.
+   - **Review Pod Spec:** Ensure that the pod specification (YAML or JSON) is correctly configured, including the startup command, arguments, environment variables, and resource requests/limits.
+   - **Validate Application:** Verify that the application inside the container is functioning correctly in a standalone environment (e.g., a local Docker container).
+   - **Resource Allocation:** Ensure that the pod has adequate resources allocated (CPU, memory) to run the application.
+   - **Event Logs:** Check the Kubernetes events for any additional error messages or warnings that might provide more context.
+
+By following these steps, you should
+2025-05-12 15:22:19,860 - k8s-error-agent - INFO - ================================================================================
+
+2025-05-12 15:22:21,182 - k8s-error-agent - INFO - Processing failed pod: default/oom-pod
+2025-05-12 15:22:25,467 - k8s-error-agent - INFO -
+================================================================================
+2025-05-12 15:22:25,469 - k8s-error-agent - INFO - ANALYSIS FOR POD: oom-pod IN NAMESPACE: default
+2025-05-12 15:22:25,469 - k8s-error-agent - INFO - ================================================================================
+2025-05-12 15:22:25,469 - k8s-error-agent - INFO - ### Concise Analysis:
+
+1. **Primary Error:**
+   - The primary error is that the container `busybox` in the pod `oom-pod` is in a `CrashLoopBackOff` state. This means the container is repeatedly crashing and being restarted by Kubernetes.
+
+2. **Potential Root Cause:**
+   - The logs indicate that the container is performing a large data operation (`134217728 bytes (128.0MB) copied`). This operation might be consuming a significant amount of memory, leading to an Out-Of-Memory (OOM) condition. The `CrashLoopBackOff` state suggests that the container is being killed by the OOM killer and then restarted, only to crash again.
+   - The `busybox` image is relatively small (4.2MB), so the issue is likely with the operation being performed inside the container rather than the image itself.
+
+3. **Recommended Action:**
+   - **Increase Resource Limits:** Ensure that the pod has sufficient memory and CPU resources allocated. You can set resource requests and limits in the pod specification to prevent the container from consuming more resources than available.
+     ```yaml
+     resources:
+       requests:
+         memory: "256Mi"
+         cpu: "500m"
+       limits:
+         memory: "512Mi"
+         cpu: "1"
+     ```
+   - **Optimize Container Operation:** Review the
+2025-05-12 15:22:25,469 - k8s-error-agent - INFO - ================================================================================
+
+2025-05-12 15:22:26,188 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:22:26,192 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:22:26,265 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:22:26,266 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:23:26,287 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:23:26,428 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:23:26,435 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:23:26,442 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:23:26,541 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:23:26,542 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:24:26,572 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:24:26,667 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:24:26,673 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:24:26,717 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:24:27,163 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:24:27,164 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:25:27,312 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:25:27,438 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:25:27,448 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:25:27,457 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:25:27,736 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:25:27,736 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:26:27,768 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:26:27,926 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:26:28,011 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:26:28,022 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:26:28,238 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:26:28,239 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:27:28,269 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:27:28,412 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:27:28,428 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:27:28,442 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:27:28,708 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:27:28,709 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:28:28,744 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:28:28,990 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:28:29,005 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:28:29,018 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:28:29,287 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:28:29,288 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:29:29,302 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:29:29,406 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:29:29,412 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:29:29,418 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:29:29,503 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:29:29,503 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:34:51,250 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:34:51,834 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:34:51,842 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:34:51,851 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:34:52,276 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:34:52,284 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
+2025-05-12 15:35:52,604 - k8s-error-agent - INFO - Found 4 namespaces
+2025-05-12 15:35:52,828 - k8s-error-agent - INFO - Found 0 failed pods in namespace default
+2025-05-12 15:35:52,928 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-node-lease
+2025-05-12 15:35:53,007 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-public
+2025-05-12 15:35:53,510 - k8s-error-agent - INFO - Found 0 failed pods in namespace kube-system
+2025-05-12 15:35:53,511 - k8s-error-agent - INFO - Sleeping for 60 seconds before next check
