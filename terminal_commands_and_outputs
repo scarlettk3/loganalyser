@@ -1,4 +1,5 @@
-PS C:\Users\****>minikube start
+PS C:\Users\****> minikube docker-env | Invoke-Expression   #to build docker image inside minikube docker environment.
+PS C:\Users\****> minikube start
 PS C:\Users\****> kubectl apply -f rbac.yaml
 PS C:\Users\****> docker build -t scarlettk/k8s-error-agent:1.0 .
 PS C:\Users\****> docker push scarlettk/k8s-error-agent:1.0
