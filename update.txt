@@ -1,0 +1,6 @@
+UPDATES I NEED TO PERFORM:
+
+1. check for more free models with more capabilities. -->last
+2. more probable way  -> restart pod(else) or revert image to the previous one(if)
+3. think up on more changes to make to get the ask api!
+
